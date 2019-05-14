@@ -1,0 +1,98 @@
+#! /usr/bin/env python3
+import re
+
+
+# This pattern won't perfectly match IPv4/IPv6/fqdn, but should provide enough
+# utility for error output without extra complexity.
+REMOTE_BORG_PATTERN = re.compile(
+    '^ssh://(?P<username>[a-z]+)_backups'
+    '@(?P<fqdn_or_ip>[a-zA-Z0-9.-[\]:]+)/~/repository$'
+)
+CONF_STRUCTURE = {
+    # TODO: Convert to {check_method: <method>, type: list|single, description: <description>, optional: <bool>}
+    'repo_passphrase': validate_repo_passphrase,
+    'local_path': validate_local_file_path,
+    'remote_path': validate_remote_borg_address,
+    'check_files': [
+        validate_check_file,
+    ],
+    'backup_paths': [
+        validate_local_file_path,
+    ],
+}
+
+
+def load_config(path):
+    with open(path) as conf_handle:
+        config = json.load(conf_handle)
+
+    for conf_entry in CONF_STRUCTURE:
+       # TODO
+
+    
+def validate_local_file_path(config_entry):
+    if not os.path.exists(config_entry):
+        raise ValidationError(
+            'Could not find local path: {path}'.format(path=config_entry),
+        )
+
+
+def validate_repo_passphrase(config_entry):
+    if not isinstance(config_entry, basestring):
+        raise ValidationError(
+            'Expected repo passphrase to be a string.',
+        )
+
+
+def validate_remote_borg_address(config_entry):
+    if not REMOTE_BORG_PATTERN.findall(config_entry):
+        raise ValidationError(
+            'Expected remote borg backup location in the form: '
+            'ssh://<username>_backups@<FQDN_OR_IP>/~/repository',
+        )
+
+
+def validate_check_file(config_entry):
+    expected_structure = (
+        '{\n'
+        '  "file_path": <path to file>,\n'
+        '  "min_size": <minimum size in kb for healthy file> (optional),\n'
+        '  "starts_with": <starting hex characters of file> (optional),\n'
+        '}'
+    )
+
+    invalid = False
+    unexpected_keys = []
+
+    if isinstance(config_entry, dict):
+        if 'file_path' not in config_entry:
+            invalid = True
+        # TODO: Can we validate the file_path entry?
+        entry_keys = set(config_entry)
+        valid_keys = set(('file_path', 'min_size', 'starts_with'))
+        unexpected_keys = entry_keys - valid_keys
+        if unexpected_keys:
+            invalid = True
+    else:
+        invalid = True
+
+    if invalid:
+        raise ValidationError(
+            'Expected a dict with structure: {structure}.\n'
+            'Saw: {entry}{unexpected}'.format(
+                structure=expected_structure,
+                entry=config_entry,
+                unexpected=(
+                    '\nUnexpected keys found: ' + ', '.join(unexpected_keys)
+                ),
+            ),
+        )
+
+
+def perform_backup(# TODO):
+    # 0. Validate local and remote repositories, abort if one corrupt, but not if file check failed)
+    # 1. Do backup to local location
+    # 2. Validate local backup (abort if repository corrupt, but not if file check failed)
+    # 3. Do backup to remote location
+    # 4. Validate remote backup
+    # 5. (finally) Send report mail
