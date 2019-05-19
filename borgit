@@ -43,7 +43,7 @@ CONF_STRUCTURE = {
     'check_files': {
         'contents': {
             'path': {
-                'validate': validate_local_file_path,  # TODO: Check this is right
+                'validate': validate_local_file_path,
                 'type': 'list',
                 'description': 'Path to check in backup.',
                 'optional': False,
@@ -283,9 +283,11 @@ def convert_size_input(size_input):
 
 
 # run_backup command:
-# 0. Validate local and remote repositories, abort if one corrupt, but not if file check failed)
+# 0. Validate local and remote repositories, abort if one corrupt, but not if
+# file check failed)
 # 1. Do backup to local location
-# 2. Validate local backup (abort if repository corrupt, but not if file check failed)
+# 2. Validate local backup (abort if repository corrupt, but not if file check
+# failed)
 # 3. Do backup to remote location
 # 4. Validate remote backup
 # 5. (finally) Send report mail
@@ -294,3 +296,6 @@ def convert_size_input(size_input):
 #  - e-mail_test command
 #  - config_validate command
 #  - validate_backup command
+#
+# For extracting files for testing, we have to remove the leading /, but
+# otherwise it's just a local file path
