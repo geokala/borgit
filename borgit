@@ -228,6 +228,20 @@ def validate_size_input(config_value):
         return str(err)
 
 
+def validate_email_address(config_value):
+    """Very naive e-mail address validation.
+    This is only intended to try to avoid the silliest of errors in e-mail
+    address configuration."""
+    string_check_failure = validate_string(config_value)
+    if string_check_failure:
+        return string_check_failure
+    if config_value.count('@') != 1:
+        return 'Expected an e-mail address with only one @.'
+    # We'll do more checking if problems manifest, but just including e-mail
+    # testing in the commands should be a reasonable alternative.
+    return ''
+
+
 class SizeConversionError(Exception):
     """Raised when failing an attempt to convert a size input."""
 
@@ -268,9 +282,15 @@ def convert_size_input(size_input):
     return int(first_parse['value']) * multiplier
 
 
+# run_backup command:
 # 0. Validate local and remote repositories, abort if one corrupt, but not if file check failed)
 # 1. Do backup to local location
 # 2. Validate local backup (abort if repository corrupt, but not if file check failed)
 # 3. Do backup to remote location
 # 4. Validate remote backup
 # 5. (finally) Send report mail
+#
+# Also needed:
+#  - e-mail_test command
+#  - config_validate command
+#  - validate_backup command
