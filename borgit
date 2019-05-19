@@ -1,17 +1,20 @@
 #! /usr/bin/env python3
+"""Script for automation of borg backups, including testing the backups.
+This wants to keep one local and remote copy.
+It also wants to inform someone of any errors encountered."""
+import os
 import re
 
 
 # This pattern won't perfectly match IPv4/IPv6/fqdn, but should provide enough
 # utility for error output without extra complexity.
 REMOTE_BORG_PATTERN = re.compile(
-    '^ssh://(?P<username>[a-z]+)_backups'
-    '@(?P<fqdn_or_ip>[a-zA-Z0-9.-[\]:]+)/~/repository$'
+    r'^ssh://(?P<username>[a-z]+)_backups'
+    r'@(?P<fqdn_or_ip>[a-zA-Z0-9.-[\]:]+)/~/repository$'
 )
 CONF_STRUCTURE = {
-    # TODO: Convert to {check_method: <method>, type: list|single, description: <description>, optional: <bool>}
     'repo_passphrase': {
-        'validate': validate_repo_passphrase,
+        'validate': validate_string,
         'type': 'single',
         'description': 'Passphrase for repository.',
         'optional': False,
@@ -112,40 +115,101 @@ CONF_STRUCTURE = {
 }
 
 
-def load_config(path):
-    with open(path) as conf_handle:
-        config = json.load(conf_handle)
+class InvalidConfiguration(Exception):
+    """Raised when configuration issues are encountered in validation."""
 
-    for conf_entry in CONF_STRUCTURE:
-       # TODO: Also needs to be recursive
 
-    
-def validate_local_file_path(config_entry):
-    if not os.path.exists(config_entry):
-        raise ValidationError(
-            'Could not find local path: {path}'.format(path=config_entry),
+def validate_config(config, prefix=None):
+    """Validate the provided config, based on the defined CONF_STRUCTURE."""
+    prefix = prefix or []
+
+    configuration_issues = []
+    for conf_entry, schema in CONF_STRUCTURE.items():
+        key_name = '.'.join(prefix + [conf_entry])
+        if conf_entry not in config:
+            if not schema['optional']:
+                configuration_issues.append(
+                    '{key} was not found in configuration, but is required.'
+                    .format(key=key_name)
+                )
+            # No need to validate an empty configuration entry.
+            continue
+
+        if schema['type'] == 'list_of_dicts':
+            configuration_issues.extend(
+                validate_config(
+                    config=config[conf_entry],
+                    prefix=prefix.append(conf_entry)
+                )
+            )
+
+        validation = schema.get('validation')
+        if validation:
+            if schema['type'] == 'single':
+                entry = [config[conf_entry]]
+            elif schema['type'] == 'list':
+                entry = config[conf_entry]
+                if not isinstance(entry, list):
+                    configuration_issues.append(
+                        '{key} is expected to be a list but was not.'
+                        .format(key=key_name)
+                    )
+            else:
+                raise RuntimeError(
+                    'Unknown type in schema: {schema_type}'.format(
+                        schema_type=schema['type'],
+                    )
+                )
+            entry_issue = validation(entry)
+            if entry_issue:
+                entry_issue = (
+                    '{key} is invalid: {issue}'.format(
+                        key=key_name,
+                        issue=entry_issue,
+                    )
+                )
+                configuration_issues.append(entry_issue)
+
+    if prefix:
+        return configuration_issues
+
+    # We are at the top level, raise any configuration issues
+    if configuration_issues:
+        raise InvalidConfiguration('\n'.join(configuration_issues))
+    return []
+
+
+def validate_local_file_path(config_value):
+    """Validate whether the supplied value is a local file path."""
+    if not os.path.exists(config_value):
+        return (
+            'Could not find local path: {path}'.format(path=config_value),
         )
+    return ''
 
 
-def validate_repo_passphrase(config_entry):
-    if not isinstance(config_entry, basestring):
-        raise ValidationError(
-            'Expected repo passphrase to be a string.',
+def validate_string(config_value):
+    """Validate that the provided value is a string."""
+    if not isinstance(config_value, str):
+        return (
+            'Expected a string.',
         )
+    return ''
 
 
-def validate_remote_borg_address(config_entry):
-    if not REMOTE_BORG_PATTERN.findall(config_entry):
-        raise ValidationError(
+def validate_remote_borg_address(config_value):
+    """Validate that the value is a supported remote borg address."""
+    if not REMOTE_BORG_PATTERN.findall(config_value):
+        return (
             'Expected remote borg backup location in the form: '
             'ssh://<username>_backups@<FQDN_OR_IP>/~/repository',
         )
+    return ''
 
 
-def perform_backup(# TODO):
-    # 0. Validate local and remote repositories, abort if one corrupt, but not if file check failed)
-    # 1. Do backup to local location
-    # 2. Validate local backup (abort if repository corrupt, but not if file check failed)
-    # 3. Do backup to remote location
-    # 4. Validate remote backup
-    # 5. (finally) Send report mail
+# 0. Validate local and remote repositories, abort if one corrupt, but not if file check failed)
+# 1. Do backup to local location
+# 2. Validate local backup (abort if repository corrupt, but not if file check failed)
+# 3. Do backup to remote location
+# 4. Validate remote backup
+# 5. (finally) Send report mail
