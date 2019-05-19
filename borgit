@@ -210,6 +210,15 @@ def validate_remote_borg_address(config_value):
     return ''
 
 
+def validate_local_executable(config_value):
+    """Validate that a local executable file has been provided."""
+    if not os.path.isfile(config_value):
+        return '{path} does not exist.'.format(path=config_value)
+    if not os.access(config_value, os.X_OK):
+        return '{path} is not executable.'.format(path=config_value)
+    return ''
+
+
 def validate_size_input(config_value):
     """Validate that a parseable size has been provided."""
     try:
