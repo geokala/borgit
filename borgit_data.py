@@ -60,20 +60,6 @@ def validate_size_input(config_value):
         return str(err)
 
 
-def validate_email_address(config_value):
-    """Very naive e-mail address validation.
-    This is only intended to try to avoid the silliest of errors in e-mail
-    address configuration."""
-    string_check_failure = validate_string(config_value)
-    if string_check_failure:
-        return string_check_failure
-    if config_value.count('@') != 1:
-        return 'Expected an e-mail address with only one @.'
-    # We'll do more checking if problems manifest, but just including e-mail
-    # testing in the commands should be a reasonable alternative.
-    return ''
-
-
 class SizeConversionError(Exception):
     """Raised when failing an attempt to convert a size input."""
 

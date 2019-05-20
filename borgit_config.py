@@ -1,6 +1,5 @@
 """Tools for handling borgit config."""
 from borgit_data import(
-    validate_email_address,
     validate_local_executable,
     validate_local_file_path,
     validate_remote_borg_address,
@@ -87,25 +86,6 @@ CONF_STRUCTURE = {
         'description': (
             'Where to store extracted backups during checking. '
             'Default is to use python secure tempdir creation.'
-        ),
-        'optional': True,
-    },
-    'notification_email': {
-        'validate': validate_email_address,
-        'type': 'list',
-        'description': (
-            'Email addresses to send notifications to. '
-            'Make sure these are going to addresses you have permission '
-            'to send to, or enjoy working your way around spam filtering for '
-            'years to come.'
-        ),
-        'optional': True,
-    },
-    'syslog_tag': {
-        'validate': None,  # This could be anything, we will str it
-        'type': 'single',
-        'description': (
-            'Syslog tag. If set, logs will be sent to syslog.'
         ),
         'optional': True,
     },
