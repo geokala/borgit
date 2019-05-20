@@ -2,17 +2,19 @@
 """Script for automation of borg backups, including testing the backups.
 This wants to keep one local and remote copy.
 It also wants to inform someone of any errors encountered."""
+import os
 import subprocess
 
 
 def run_backup(repo, repo_key, archive_name, sources):
     """Backup data using borg."""
-    borg_env = {
+    borg_env = os.environ.copy()
+    borg_env.update({
         'BORG_REPO': repo,
         # This'll be accessible via /proc to root or anyone who can run as
         # this user... but that's true of the config file anyway.
         'BORG_PASSPHRASE': repo_key,
-    }
+    })
     subprocess.check_call(
         [
             'borg', 'create',
