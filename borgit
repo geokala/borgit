@@ -4,6 +4,7 @@ This wants to keep one local and remote copy.
 It also wants to inform someone of any errors encountered."""
 import os
 import re
+import subprocess
 
 
 # This pattern won't perfectly match IPv4/IPv6/fqdn, but should provide enough
@@ -280,6 +281,24 @@ def convert_size_input(size_input):
         )
 
     return int(first_parse['value']) * multiplier
+
+
+def run_backup(repo, repo_key, archive_name, sources):
+    """Backup data using borg."""
+    borg_env = {
+        'BORG_REPO': repo,
+        # This'll be accessible via /proc to root or anyone who can run as
+        # this user... but that's true of the config file anyway.
+        'BORG_PASSPHRASE': repo_key,
+    }
+    subprocess.check_call(
+        [
+            'borg', 'create',
+            '--stats', '--verbose', '--show-rc',
+            '--compression', 'lz4', '::' + archive_name,
+        ] + sources,
+        env=borg_env,
+    )
 
 
 # run_backup command:
