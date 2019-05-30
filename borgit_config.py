@@ -15,6 +15,13 @@ CONF_STRUCTURE = {
         'description': 'Passphrase for repository.',
         'optional': False,
     },
+    'working_directory': {
+        'validate': validate_local_file_path,
+        'type': 'single',
+        'description': 'Prefix for temporary files.',
+        'default': '/tmp',
+        'optional': True,
+    },
     'local_destination_paths': {
         'validate': validate_local_file_path,
         'type': 'single',
@@ -100,12 +107,13 @@ def validate_config(config, prefix=None):
     for conf_entry, schema in CONF_STRUCTURE.items():
         key_name = '.'.join(prefix + [conf_entry])
         if conf_entry not in config:
+            config[conf_entry] = schema.get('default')
             if not schema['optional']:
                 configuration_issues.append(
                     '{key} was not found in configuration, but is required.'
                     .format(key=key_name)
                 )
-            # No need to validate an empty configuration entry.
+            # No need to validate an empty or default configuration entry.
             continue
 
         if schema['type'] == 'list_of_dicts':
