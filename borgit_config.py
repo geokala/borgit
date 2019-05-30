@@ -22,13 +22,13 @@ CONF_STRUCTURE = {
         'default': '/tmp',
         'optional': True,
     },
-    'local_destination_paths': {
+    'local_destination_path': {
         'validate': validate_local_file_path,
         'type': 'single',
         'description': 'Local backup repository destination.',
         'optional': False,
     },
-    'remote_path': {
+    'remote_destination_path': {
         'validate': validate_remote_borg_address,
         'type': 'single',
         'description': 'Remote backup repository destination.',
