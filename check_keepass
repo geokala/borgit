@@ -2,15 +2,23 @@
 """Keepass file checker for borgit.
 With thanks to lgg on github's gist:
 https://gist.github.com/lgg/e6ccc6e212d18dd2ecd8a8c116fb1e45"""
+import argparse
 import sys
 
 
-class NotKDB(Exception):
+class CheckFailure(Exception):
+    """Exceptions that fail the script's health checks."""
+
+class NotKDB(CheckFailure):
     """Error when a file is not a valid KDB."""
 
 
-class UnsupportedKDB(Exception):
+class UnsupportedKDB(CheckFailure):
     """Error for unsupported KDB file versions."""
+
+
+class ConstraintViolated(CheckFailure):
+    """Error when user-provided constraints are violated."""
 
 
 def validate_signature(signature):
@@ -65,7 +73,7 @@ def get_kdb_details(data):
     }
 
 
-def check_kdb_file(target_file):
+def check_kdb_file(target_file, min_entries):
     """Check a KDB file is valid and meets the specified requirements."""
     with open(target_file, 'rb') as kdb_file:
         kdb_data = kdb_file.read()
@@ -73,8 +81,42 @@ def check_kdb_file(target_file):
     validate_signature(kdb_data[0:4])
 
     kdb_details = get_kdb_details(kdb_data)
-    print(kdb_details)
+
+    if kdb_details['entries'] < min_entries:
+        raise ConstraintViolated(
+            'At least {req} entries were required, '
+            'but the KDB had {count} entries.'.format(
+                req=min_entries,
+                count=kdb_details['entries'],
+            )
+        )
+
+
+def main(args):
+    """Run the checks with provided arguments."""
+    parser = argparse.ArgumentParser(
+        description='Check a keepass DB for borgit.',
+    )
+
+    parser.add_argument(
+        '-e', '--min-entries',
+        type=int,
+        default=0,
+        help='Minimum entries to consider this KDB healthy.',
+    )
+    parser.add_argument(
+        'keepass_file',
+        help='Path to KDB file.',
+    )
+
+    args = parser.parse_args(args)
+
+    try:
+        check_kdb_file(args.keepass_file, args.min_entries)
+    except CheckFailure as err:
+        sys.stderr.write(str(err) + '\n')
+        sys.exit(1)
 
 
 if __name__ == '__main__':
-    check_kdb_file(sys.argv[1])
+    main(sys.argv[1:])
