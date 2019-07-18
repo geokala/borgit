@@ -48,7 +48,7 @@ CONF_STRUCTURE = {
                 'description': 'Path to check in backup.',
                 'optional': False,
             },
-            'check_command': {
+            'command': {
                 'validate': validate_local_executable,
                 'type': 'single',
                 'description': (
@@ -59,7 +59,7 @@ CONF_STRUCTURE = {
                 ),
                 'optional': False,
             },
-            'check_arguments': {
+            'arguments': {
                 'validate': None,  # These could be anything, we will str them
                 'type': 'list',
                 'description': (

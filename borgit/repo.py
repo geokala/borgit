@@ -13,7 +13,8 @@ class BorgRepo:
         self.repo_key = repo_key
         self.working_directory = working_directory
 
-    def _run_borg_command(self, command, archive_name=None, args=None):
+    def _run_borg_command(self, command, archive_name=None, args=None,
+                          sources=None):
         """Run a borg command on an archive with any (list of) args."""
         borg_env = os.environ.copy()
         borg_env.update({
@@ -24,21 +25,33 @@ class BorgRepo:
         })
 
         borg_command = ['borg', command]
-        if archive_name:
-            borg_command.append('::' + archive_name)
         if args:
             borg_command.extend(args)
+        if archive_name:
+            borg_command.append('::' + archive_name)
+        if sources:
+            borg_command.extend(sources)
         return subprocess.check_output(borg_command, env=borg_env,
                                        cwd=self.working_directory)
 
+    def init(self):
+        """Initialise the borg backup repository."""
+        self._run_borg_command(
+            'init',
+            args=['--encryption=repokey'],
+        )
+
     def backup(self, archive_name, sources):
         """Backup data using borg."""
+        if isinstance(sources, str):
+            sources = [sources]
         self._run_borg_command(
             'create', archive_name,
             args=[
                 '--stats', '--verbose', '--show-rc',
                 '--compression', 'lz4',
-            ] + sources,
+            ],
+            sources=sources,
         )
 
     def list_archives(self):
