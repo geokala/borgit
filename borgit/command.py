@@ -62,6 +62,7 @@ def perform_backup(repo, archive_name, config, logger):
     """
     repo.backup(archive_name, config['backup_source_paths'])
 
+    # TODO: This won't work until we actually make it restore the required files!
     integrity_failure = False
     for check in config['check_files']:
         check_command = [os.path.join('check_commands', check['command'])]

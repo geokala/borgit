@@ -10,6 +10,8 @@ from borgit.repo import BorgRepo
 
 def test_base():
     """Perform a basic test of local borg backup."""
+    # TODO: This needs to actually generate the destination path,
+    # using a tempdir.mkdtemp
     with open('tests/base.conf') as conf_handle:
         config = yaml.safe_load(conf_handle.read())
     config['backup_source_paths'] = os.path.join(
@@ -25,3 +27,6 @@ def test_base():
     archive_name = 'base_test'
     logger = getLogger()
     perform_backup(repo, archive_name, config, logger)
+    # TODO: Clean up after the test is done
+
+# TODO: Do the other tests
