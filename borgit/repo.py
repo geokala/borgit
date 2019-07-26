@@ -59,14 +59,14 @@ class BorgRepo:
         return self._run_borg_command(
             'list',
             args=['--format', '{archive}{NL}'],
-        ).split(r'\n')
+        ).splitlines()
 
     def list_files_in_archive(self, archive_name):
         """Get a list of all files in an archive."""
         return self._run_borg_command(
             'list', archive_name,
             args=['--format', '{path}{NL}'],
-        ).split(r'\n')
+        ).splitlines()
 
     def restore_file_from_archive(self, archive_name, path):
         """Restore specific file or directory from an archive."""
@@ -74,8 +74,9 @@ class BorgRepo:
         # supplied leading slashes.
         path = path.lstrip('/')
         self._run_borg_command(
-            'extract', archive_name,
-            args=[path],
+            'extract',
+            archive_name=archive_name,
+            sources=[path],
         )
 
     def check(self):

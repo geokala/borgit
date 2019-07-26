@@ -2,6 +2,7 @@
 """Script for automation of borg backups, including testing the backups.
 This wants to keep one local and remote copy."""
 import os
+import shutil
 import subprocess
 import tempfile
 
@@ -62,12 +63,19 @@ def perform_backup(repo, archive_name, config, logger):
     """
     repo.backup(archive_name, config['backup_source_paths'])
 
-    # TODO: This won't work until we actually make it restore the required files!
     integrity_failure = False
     for check in config['check_files']:
         check_command = [os.path.join('check_commands', check['command'])]
+        path = os.path.join(
+            config['working_directory'],
+            check['path'].lstrip('/')
+        )
+
         check_command.extend(check['arguments'])
-        check_command.append(check['path'])
+        check_command.append(path)
+
+        repo.restore_file_from_archive(archive_name, check['path'])
+
         proc = subprocess.Popen(
             check_command,
             stdout=subprocess.PIPE,
@@ -84,6 +92,11 @@ def perform_backup(repo, archive_name, config, logger):
             output = logger.warn
         for line in stderr.splitlines():
             output(line)
+
+        if os.path.isdir(path):
+            shutil.rmtree(path)
+        else:
+            os.unlink(path)
 
     # Make sure we fail noisily if for whatever reason the archive has become
     # corrupted.

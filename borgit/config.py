@@ -1,5 +1,5 @@
 """Tools for handling borgit config."""
-from borgit_data import(
+from borgit.data import(
     validate_local_executable,
     validate_local_file_path,
     validate_remote_borg_address,
