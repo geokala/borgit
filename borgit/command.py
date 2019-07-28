@@ -6,11 +6,8 @@ import shutil
 import subprocess
 import tempfile
 
+from borgit.exceptions import CheckFailure
 from borgit.repo import BorgRepo
-
-
-class CheckFailure(Exception):
-    """Raised when integrity checks of a backup fail."""
 
 
 def get_repos(config):
@@ -64,7 +61,7 @@ def perform_backup(repo, archive_name, config, logger):
     repo.backup(archive_name, config['backup_source_paths'])
 
     integrity_failure = False
-    for check in config['check_files']:
+    for check in config.get('check_files', []):
         check_command = [os.path.join('check_commands', check['command'])]
         path = os.path.join(
             config['working_directory'],
@@ -89,7 +86,7 @@ def perform_backup(repo, archive_name, config, logger):
             output = logger.error
             integrity_failure = True
         else:
-            output = logger.warn
+            output = logger.warning
         for line in stderr.splitlines():
             output(line)
 

@@ -87,15 +87,6 @@ CONF_STRUCTURE = {
         ),
         'optional': True,
     },
-    'check_file_extraction_location': {
-        'validate': validate_local_file_path,
-        'type': 'single',
-        'description': (
-            'Where to store extracted backups during checking. '
-            'Default is to use python secure tempdir creation.'
-        ),
-        'optional': True,
-    },
 }
 
 

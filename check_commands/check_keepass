@@ -9,6 +9,7 @@ import sys
 class CheckFailure(Exception):
     """Exceptions that fail the script's health checks."""
 
+
 class NotKDB(CheckFailure):
     """Error when a file is not a valid KDB."""
 
@@ -85,8 +86,9 @@ def check_kdb_file(target_file, min_entries):
     if kdb_details['entries'] < min_entries:
         raise ConstraintViolated(
             'At least {req} entries were required, '
-            'but the KDB had {count} entries.'.format(
+            'but {kdb_path} had {count} entries.'.format(
                 req=min_entries,
+                kdb_path=target_file,
                 count=kdb_details['entries'],
             )
         )
